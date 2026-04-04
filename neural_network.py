@@ -27,9 +27,28 @@ class NeuralNetwork:
         dz1 = da1 * (self.z1 > 0)
         self.dW1 = np.dot(dz1, self.x.T)
         self.db1 = np.sum(dz1, axis=1, keepdims=True)
+        self.dx = np.dot(self.W1.T, dz1)  # gradient w.r.t. inputs (needed to train sky NN)
 
     def update(self, learning_rate):
         self.W1 = self.W1 - learning_rate * self.dW1
         self.b1 = self.b1 - learning_rate * self.db1
         self.W2 = self.W2 - learning_rate * self.dW2
         self.b2 = self.b2 - learning_rate * self.db2
+
+    def backward_from_grad(self, dz2):
+        # same as backward() but accepts gradient directly
+        # used by the sky NN which receives its gradient from the ground NN's input gradient
+        self.dW2 = np.dot(dz2, self.a1.T)
+        self.db2 = np.sum(dz2, axis=1, keepdims=True)
+        da1 = np.dot(self.W2.T, dz2)
+        dz1 = da1 * (self.z1 > 0)
+        self.dW1 = np.dot(dz1, self.x.T)
+        self.db1 = np.sum(dz1, axis=1, keepdims=True)
+    
+    def copy_weights_from(self, other):
+        # copies weights from another NeuralNetwork instance
+        # used to initialise and periodically update the target network
+        self.W1 = other.W1.copy()
+        self.b1 = other.b1.copy()
+        self.W2 = other.W2.copy()
+        self.b2 = other.b2.copy()
