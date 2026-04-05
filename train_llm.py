@@ -41,8 +41,6 @@ def get_llm_comm(sky_obs):
     prompt = f"""You are a sky agent in a 6x6 grid navigation task (rows 0-5, cols 0-5).
 
 Grid layout:
-- Walls at positions: (row=2,col=2), (row=2,col=3), (row=5,col=3)
-- Exit at: row=5, col=5
 - Agent currently at: row={agent_x}, col={agent_y}
 - {key_info}
 
