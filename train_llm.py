@@ -9,7 +9,9 @@ from replay_buffer import ReplayBuffer
 
 # load API key from .env
 load_dotenv()
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+api_key = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key) if api_key else None
+
 
 # load cache if it exists — allows running without API key once warmed up
 CACHE_FILE = "llm_cache.json"
