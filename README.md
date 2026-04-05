@@ -5,9 +5,9 @@ This project investigates whether Large Language Models (LLMs) can provide super
 This repository is an evolution of my previous project [[ANN](https://github.com/armaannaseem/ANN)], which established the foundational NumPy DQN engine (**No ML libraries, only NumPy**) for a single agent. This extension upgrades the environment to a 6x6 partial-observability grid and introduces the Sky/Ground multi-agent problem solving environment.
 
 ## Project Overview
-The environment is a 6x6 GridWorld where a "Ground Agent" must navigate around obstacles to collect a key and then proceed to the exit. However, the ground agent has **partial observability** with it only able to see its current location, location of the goal state, and understanding of walls on the grid if and when it collides with them.
+The environment is a 6x6 GridWorld where a "Ground Agent" must navigate around obstacles to collect a key and then proceed to the exit. However, the ground agent has **partial observability** with it only able to see its current location, and nothing else. All other objects (walls, goal, key generated at random location) having their location discovered over time through RL.
 
-A second "Sky Agent" also has **partial observability** of the grid, with it able to see the Ground Agent's location, the Key's location, and nothing else. It cannot move and its sole purpose is to communicate to the Ground Agent to help it find the key which it cannot see. 
+A second "Sky Agent" also has **partial observability** of the grid, with it able to see the Ground Agent's location, the Key's location, and nothing else. It cannot move and its sole purpose is to communicate to the Ground Agent to help it find the key which it cannot see. It cannot help the ground agent with respect to the location of walls or the goal. 
 
 We compare three paradigms for how the Sky Agent assists the Ground Agent:
 1. **Baseline**: No communication whatsoever.
@@ -38,11 +38,11 @@ To ensure the LLM experiments are easily reproducible without requiring graders 
 
 This cache stores the LLM's pre-computed responses to every possible spatial configuration in the GridWorld. When you run the LLM script, it will fetch responses from this local cache (taking microseconds) rather than making live API calls. 
 
-*(If you wish to make live API calls or modify the prompt, copy `.env.example` to `.env`, add your own Gemini API key, and delete llm_cache.json).*
+*(If you wish to make live API calls or modify the prompt, copy `.env.example` to `.env`, add your own Gemini API key, and delete `llm_cache.json`).*
 
 ## Running the Experiments
 
-You can train the agents in all three paradigms using the provided scripts. Each script trains for 3,000 episodes and will save its results as `.npy` files. You can then finally run plot_results.py to generate graphs similar to the one above.
+You can train the agents in all three paradigms using the provided scripts. Each script trains for 3,000 episodes and will save its results as `.npy` files. You can then finally run `plot_results.py` to generate graphs similar to the one above.
 
 ```bash
 # 1. Run Baseline (No Comm)
@@ -59,17 +59,20 @@ python3 plot_results.py
 ```
 
 ## Technical Architecture & Implementation
-A major feature of this project is that **no high-level deep learning frameworks (like PyTorch or TensorFlow) were used.** The entire Reinforcement Learning engine is built from scratch in pure NumPy.
+A major contraint, and feature, of this project is that **no high-level deep learning frameworks (like PyTorch or TensorFlow) were used.** The entire Reinforcement Learning engine is built from scratch in pure NumPy.
 
 ### Deep Q-Network (DQN)
 The Ground Agent is powered by an explicitly coded Neural Network featuring a hidden layer with 64 neurons, ReLU activations, and a custom backpropagation engine. The network learns to map the 7-dimensional input vector (3 local sensors + 4 communication signals) directly to Q-values for the 4 possible actions.
 
+### Rewards ###
+Reaching the goal rewards +1, finding the key rewards +0.5, each step costs -0.01, and hitting a wall costs -0.1.
+
 ### Reinforcement Learning Mechanics
-To ensure convergence and prevent catastrophic forgetting, the agent utilizes several advanced RL stabilization techniques:
+To ensure convergence and prevent catastrophic forgetting, the agent utilizes a handful of advanced RL stabilization techniques:
 * **The Bellman Equation**: The network's loss is calculated fundamentally upon Bellman targets, bootstrapping the value of the next state: `Q*(s,a) = r + γ * max(Q(s', a'))`. Backpropagation manually computes gradients based on this temporal difference error.
 * **Epsilon-Greedy Exploration**: Action selection balances exploitation (trusting the NN's Q-values) with exploration (taking random actions). Epsilon decays multiplicatively from `1.0` down to `0.1`, forcing the agent to discover the environment early and refine its policy later.
 * **Experience Replay**: Transitions `(s, a, r, s', done)` are stored in a rolling `deque` buffer of capacity 10,000. Gradients are calculated over random mini-batches of size 32, successfully breaking the temporal correlation of sequential grid steps. 
-* **Target Network Stabilization**: A separate, frozen copy of the Ground Agent's neural network is used to calculate the `max(Q(s', a'))` Bellman targets. The weights of the active network are hard-copied to the target network every 100 steps, preventing the "moving target" destabilization problem famous in standard Q-learning.
+* **Target Network Stabilization**: A separate, frozen copy of the Ground Agent's neural network is used to calculate the `max(Q(s', a'))` Bellman targets. The weights of the active network are hard-copied to the target network every 100 steps, preventing the "moving target" destabilization problem famous in standard Q-learning *(Mnih et al., 2015)*.
 
 ### Communication Integration
 For the **Emergent MARL** condition, joint backpropagation was achieved by passing the temporal difference gradients backward from the Ground Network, through the 4-dimensional communication channel, and directly into the Sky Network. For the **LLM** condition, the sky network is bypassed, and the language model's zero-shot dimensional rankings seamlessly replace the continuous vector.
