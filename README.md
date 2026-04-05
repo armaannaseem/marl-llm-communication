@@ -2,7 +2,7 @@
 
 This project investigates whether Large Language Models (LLMs) can provide superior, zero-shot guidance in a Multi-Agent Reinforcement Learning (MARL) environment compared to traditional emergent communication channels.
 
-This repository is an evolution of my previous project [[ANN](https://github.com/armaannaseem/ANN)], which established the foundational NumPy DQN engine (No ML libraries) for a single agent. This extension upgrades the environment to a 6x6 partial-observability grid and introduces the Sky/Ground multi-agent problem solving environment.
+This repository is an evolution of my previous project [[ANN](https://github.com/armaannaseem/ANN)], which established the foundational NumPy DQN engine (**No ML libraries, only NumPy**) for a single agent. This extension upgrades the environment to a 6x6 partial-observability grid and introduces the Sky/Ground multi-agent problem solving environment.
 
 ## Project Overview
 The environment is a 6x6 GridWorld where a "Ground Agent" must navigate around obstacles to collect a key and then proceed to the exit. However, the ground agent has **partial observability** with it only able to see its current location, location of the goal state, and understanding of walls on the grid if and when it collides with them.
