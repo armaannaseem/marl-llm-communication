@@ -26,8 +26,8 @@ This project requires no deep learning frameworks — just standard Python libra
 
 ```bash
 # 1. Clone the repository
-git clone <your-repo-link>
-cd <repo-name>
+git clone <https://github.com/armaannaseem/marl-llm-communication?tab=readme-ov-file>
+cd <marl-llm-communication>
 
 # 2. Install requirements
 python3 -m pip install numpy python-dotenv google-genai matplotlib
